@@ -166,6 +166,37 @@ Or to use Gemini models:
 }
 ```
 
+### Load Environment Variables
+
+Add the proxy settings to your shell profile:
+
+**macOS / Linux:**
+
+```bash
+echo 'export ANTHROPIC_BASE_URL="http://localhost:8080"' >> ~/.zshrc
+echo 'export ANTHROPIC_API_KEY="test"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+> For Bash users, replace `~/.zshrc` with `~/.bashrc`
+
+**Windows (PowerShell):**
+
+```powershell
+Add-Content $PROFILE "`n`$env:ANTHROPIC_BASE_URL = 'http://localhost:8080'"
+Add-Content $PROFILE "`$env:ANTHROPIC_API_KEY = 'test'"
+. $PROFILE
+```
+
+**Windows (Command Prompt):**
+
+```cmd
+setx ANTHROPIC_BASE_URL "http://localhost:8080"
+setx ANTHROPIC_API_KEY "test"
+```
+
+Restart your terminal for changes to take effect.
+
 ### Run Claude Code
 
 ```bash
