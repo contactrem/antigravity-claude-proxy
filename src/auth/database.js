@@ -124,11 +124,13 @@ export function getAuthStatus(dbPath = ANTIGRAVITY_DB_PATH) {
         // Get cached or new database connection
         const db = getDatabaseConnection(dbPath);
 
-        // Prepare and execute query
-        const stmt = db.prepare(
-            "SELECT value FROM ItemTable WHERE key = 'antigravityAuthStatus'"
-        );
-        const row = stmt.get();
+        // Prepare and execute query (using cached statement if available)
+        if (!db._cachedAuthStmt) {
+            db._cachedAuthStmt = db.prepare(
+                "SELECT value FROM ItemTable WHERE key = 'antigravityAuthStatus'"
+            );
+        }
+        const row = db._cachedAuthStmt.get();
 
         if (!row || !row.value) {
             throw new Error('No auth status found in database');
