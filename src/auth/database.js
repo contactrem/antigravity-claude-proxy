@@ -32,7 +32,7 @@ const dbCache = new Map();
  * @returns {Function} The Database constructor
  * @throws {Error} If module cannot be loaded even after rebuild
  */
-function loadDatabaseModule() {
+let loadDatabaseModule = function() {
     // Return cached module if already loaded
     if (Database) return Database;
 
@@ -41,6 +41,8 @@ function loadDatabaseModule() {
 
     try {
         Database = require('better-sqlite3');
+        // Optimize: replace this function with one that simply returns the module
+        loadDatabaseModule = () => Database;
         return Database;
     } catch (error) {
         if (isModuleVersionError(error)) {
@@ -55,6 +57,8 @@ function loadDatabaseModule() {
 
                     Database = require('better-sqlite3');
                     logger.success('[Database] Module reloaded successfully after rebuild');
+                    // Optimize here as well
+                    loadDatabaseModule = () => Database;
                     return Database;
                 } catch (retryError) {
                     // Rebuild succeeded but reload failed - user needs to restart
@@ -82,7 +86,7 @@ function loadDatabaseModule() {
         // Non-version-mismatch error, just throw it
         throw error;
     }
-}
+};
 
 /**
  * Get a cached database connection or create a new one
