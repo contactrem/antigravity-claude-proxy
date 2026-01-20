@@ -241,8 +241,18 @@ export async function sendMessage(anthropicRequest, accountManager, fallbackEnab
                                     // Don't increment endpointIndex - retry same endpoint
                                     continue;
                                 }
-                                // Max capacity retries exceeded - treat as quota exhaustion
-                                logger.warn(`[CloudCode] Max capacity retries (${MAX_CAPACITY_RETRIES}) exceeded, switching account`);
+                                // Max capacity retries exceeded for this endpoint
+                                logger.warn(`[CloudCode] Max capacity retries (${MAX_CAPACITY_RETRIES}) exceeded for endpoint ${endpoint}, trying next endpoint...`);
+
+                                // Set last error so if all endpoints fail we have a record
+                                lastError = new Error(`Capacity exhausted: ${errorText}`);
+                                lastError.is429 = true;
+                                lastError.resetMs = resetMs;
+                                lastError.errorText = errorText;
+
+                                endpointIndex++;
+                                capacityRetryCount = 0; // Reset for next endpoint
+                                continue;
                             }
 
                             // Gap 1: Check deduplication window to prevent thundering herd
