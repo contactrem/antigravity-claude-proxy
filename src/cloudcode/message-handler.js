@@ -210,7 +210,13 @@ export async function sendMessage(anthropicRequest, accountManager, fallbackEnab
 
                     if (!response.ok) {
                         const errorText = await response.text();
-                        logger.warn(`[CloudCode] Error at ${endpoint}: ${response.status} - ${errorText}`);
+
+                        // Use info level for 429s to reduce noise during normal failover
+                        if (response.status === 429) {
+                            logger.info(`[CloudCode] Rate limit at ${endpoint}: ${response.status} - ${errorText}`);
+                        } else {
+                            logger.warn(`[CloudCode] Error at ${endpoint}: ${response.status} - ${errorText}`);
+                        }
 
                         if (response.status === 401) {
                             // Gap 3: Check for permanent auth failures
