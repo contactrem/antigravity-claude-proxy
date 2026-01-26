@@ -372,6 +372,14 @@ export async function* sendMessageStream(anthropicRequest, accountManager, fallb
 
                         // Check for 503 MODEL_CAPACITY_EXHAUSTED - use progressive backoff like 429 capacity
                         if (response.status === 503 && isModelCapacityExhausted(errorText)) {
+                            // Intelligent Failover: If we have other endpoints to try, skip the backoff and try next endpoint immediately
+                            // This bypasses short-term capacity issues on specific regions/endpoints (e.g. Daily vs Prod)
+                            if (endpointIndex < ANTIGRAVITY_ENDPOINT_FALLBACKS.length - 1) {
+                                logger.warn(`[CloudCode] 503 Model capacity exhausted at ${endpoint}. Fast failover to next endpoint...`);
+                                endpointIndex++;
+                                continue;
+                            }
+
                             if (capacityRetryCount < MAX_CAPACITY_RETRIES) {
                                 // Progressive capacity backoff tiers (same as 429 capacity handling)
                                 const tierIndex = Math.min(capacityRetryCount, CAPACITY_BACKOFF_TIERS_MS.length - 1);
@@ -380,7 +388,7 @@ export async function* sendMessageStream(anthropicRequest, accountManager, fallb
                                 accountManager.incrementConsecutiveFailures(account.email);
                                 logger.info(`[CloudCode] 503 Model capacity exhausted, retry ${capacityRetryCount}/${MAX_CAPACITY_RETRIES} after ${formatDuration(waitMs)}...`);
                                 await sleep(waitMs);
-                                // Don't increment endpointIndex - retry same endpoint
+                                // Don't increment endpointIndex - retry same endpoint (last resort)
                                 continue;
                             }
                             // Max capacity retries exceeded - switch account
